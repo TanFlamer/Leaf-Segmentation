@@ -4,60 +4,50 @@ image2 = imread("C:\Important\Uni\Coursework\ITIP\Images\plant002.png");
 image3 = imread("C:\Important\Uni\Coursework\ITIP\Images\plant003.png");
 
 currentImage = image3;
-sharpImage = imsharpen(currentImage,'Radius',1.5,'Amount',1.5,'Threshold',0.01);
-
 normalHSV = rgb2hsv(currentImage);
-sharpHSV = rgb2hsv(sharpImage);
-
 normalYCbCr = rgb2ycbcr(currentImage);
-sharpYCbCr = rgb2ycbcr(sharpImage);
 
-subplot(2,2,1);
+subplot(1,3,1);
 imshow(currentImage);
-title('Normal Image');
+title('Normal RGB');
 impixelinfo;
 
-subplot(2,2,2);
-imshow(sharpImage);
-title('Sharp Image');
-impixelinfo;
-
-subplot(2,2,3);
+subplot(1,3,2);
 imshow(normalHSV);
 title('Normal HSV');
 impixelinfo;
 
-subplot(2,2,4);
-imshow(sharpHSV);
-title('Sharp HSV');
+subplot(1,3,3);
+imshow(normalYCbCr);
+title('Normal YCbCr');
 impixelinfo;
 
-red = sharpImage(:,:,1);
-green = sharpImage(:,:,2);
-blue = sharpImage(:,:,3);
+red = currentImage(:,:,1);
+green = currentImage(:,:,2);
+blue = currentImage(:,:,3);
 
-hue = sharpHSV(:,:,1);
-saturation = sharpHSV(:,:,2);
-value = sharpHSV(:,:,3);
+hue = normalHSV(:,:,1);
+saturation = normalHSV(:,:,2);
+value = normalHSV(:,:,3);
 
-luma = sharpYCbCr(:,:,1);
-blueRelative = sharpYCbCr(:,:,2);
-redRelative = sharpYCbCr(:,:,3);
+luma = normalYCbCr(:,:,1);
+blueRelative = normalYCbCr(:,:,2);
+redRelative = normalYCbCr(:,:,3);
 
 redMask = (red > 70 & red < 140);
 greenMask = (green > 100);
 blueMask = (blue > 30 & blue < 100);
 
 specialMask = (green > 1.1 * red & green > 1.1 * blue);
-specialMask2 = (green > (red + blue) / 1.3);
-specialMask3 = ((red/3 + green/3 + blue/3) < 200);
+specialMask2 = (green > (red + blue) / 1.4);
+specialMask3 = (red + blue > green);
 
 hueMask = (hue >= 0.2 & hue <= 0.35);
 saturationMask = (saturation >= 0.3 & saturation <= 0.6);
 valueMask = (value >= 0.2 & value <= 0.7);
 
 lumaMask = (luma >= 100 & luma <= 150);
-blueRelativeMask = (blueRelative >= 60 & blueRelative <= 120);
+blueRelativeMask = (blueRelative >= 60 & blueRelative <= 121);
 redRelativeMask = (redRelative >= 100 & redRelative <= 125);
 
 figure();
@@ -85,6 +75,7 @@ title('Special Mask 2');
 subplot(4, 3, 6);
 imshow(specialMask3, []);
 title('Special Mask 3');
+impixelinfo;
 
 subplot(4, 3, 7);
 imshow(hueMask, []);
@@ -119,71 +110,43 @@ imshow(originalMask, []);
 title('Original Mask');
 
 maskedrgbImage = uint8(zeros(size(originalMask))); % Initialize
-maskedrgbImage(:,:,1) = sharpImage(:,:,1) .* originalMask;
-maskedrgbImage(:,:,2) = sharpImage(:,:,2) .* originalMask;
-maskedrgbImage(:,:,3) = sharpImage(:,:,3) .* originalMask;
+maskedrgbImage(:,:,1) = currentImage(:,:,1) .* originalMask;
+maskedrgbImage(:,:,2) = currentImage(:,:,2) .* originalMask;
+maskedrgbImage(:,:,3) = currentImage(:,:,3) .* originalMask;
 
 subplot(3, 2, 2);
 imshow(maskedrgbImage);
 title('Masked Original Image');
 
-removedMask = bwareaopen(originalMask,200);
+removedMask = bwareaopen(originalMask,400);
 subplot(3, 2, 3);
 imshow(removedMask, []);
 title('Removed Mask');
 
 removedrgbImage = uint8(zeros(size(removedMask))); % Initialize
-removedrgbImage(:,:,1) = sharpImage(:,:,1) .* uint8(removedMask);
-removedrgbImage(:,:,2) = sharpImage(:,:,2) .* uint8(removedMask);
-removedrgbImage(:,:,3) = sharpImage(:,:,3) .* uint8(removedMask);
+removedrgbImage(:,:,1) = currentImage(:,:,1) .* uint8(removedMask);
+removedrgbImage(:,:,2) = currentImage(:,:,2) .* uint8(removedMask);
+removedrgbImage(:,:,3) = currentImage(:,:,3) .* uint8(removedMask);
 
 subplot(3, 2, 4);
 imshow(removedrgbImage);
 title('Removed Original Image');
 
-se = strel('disk',5);
+se = strel('disk',4);
 closedMask = imclose(removedMask,se);
 subplot(3, 2, 5);
 imshow(closedMask, []);
 title('Closed Mask');
 
 closedrgbImage = uint8(zeros(size(closedMask))); % Initialize
-closedrgbImage(:,:,1) = sharpImage(:,:,1) .* uint8(closedMask);
-closedrgbImage(:,:,2) = sharpImage(:,:,2) .* uint8(closedMask);
-closedrgbImage(:,:,3) = sharpImage(:,:,3) .* uint8(closedMask);
+closedrgbImage(:,:,1) = currentImage(:,:,1) .* uint8(closedMask);
+closedrgbImage(:,:,2) = currentImage(:,:,2) .* uint8(closedMask);
+closedrgbImage(:,:,3) = currentImage(:,:,3) .* uint8(closedMask);
 
 subplot(3, 2, 6);
 imshow(closedrgbImage);
 title('Closed Original Image');
 
-%{
-figure();
-sensitivity = 0.17;
-
-subplot(3,2,1);
-imshow(enhanced);
-title('Original Image');
-
-subplot(3,2,2);
-imshow(edge(enhanced,'log',0.007));
-title('Log');
-
-subplot(3,2,3);
-imshow(edge(enhanced,'sobel',sensitivity));
-title('Sobel');
-
-subplot(3,2,4);
-imshow(edge(enhanced,'canny',sensitivity));
-title('Canny');
-
-subplot(3,2,5);
-imshow(edge(enhanced,'prewitt',sensitivity));
-title('Prewitt');
-
-subplot(3,2,6);
-imshow(edge(enhanced,'roberts',sensitivity));
-title('Roberts');
-%}
 
 leaves = rgb2gray(closedrgbImage);
 %enhanced = adapthisteq(leaves);
