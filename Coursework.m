@@ -1,197 +1,281 @@
-%function Coursework()
-
 image1 = imread("C:\Important\Uni\Coursework\ITIP\Images\plant001.png");
 image2 = imread("C:\Important\Uni\Coursework\ITIP\Images\plant002.png");
 image3 = imread("C:\Important\Uni\Coursework\ITIP\Images\plant003.png");
 
-subplot(1,2,1);
-imshow(image1);
+currentImage = image3;
+normalHSV = rgb2hsv(currentImage);
+normalYCbCr = rgb2ycbcr(currentImage);
 
-sharp1 = imsharpen(image1,'Radius',1.5,'Amount',1.5,'Threshold',0.01);
-subplot(1,2,2);
-imshow(sharp1);
+subplot(1,3,1);
+imshow(currentImage);
+title('Normal RGB');
+impixelinfo;
 
-sensitivity = 0.085;
+subplot(1,3,2);
+imshow(normalHSV);
+title('Normal HSV');
+impixelinfo;
 
-leaves = rgb2gray(sharp1);
-edges_canny = edge(leaves,'Canny',0.2);
-edges_prewitt = edge(leaves,'Prewitt',0.06);
-edges_roberts = edge(leaves,'Roberts',0.08);
-edges_sobel = edge(leaves,'Sobel',0.07);
-edges_log = edge(leaves,'log',0.005);
+subplot(1,3,3);
+imshow(normalYCbCr);
+title('Normal YCbCr');
+impixelinfo;
 
-%figure();
-%subplot(1,2,1);
-%imshow(edges_log);
+red = currentImage(:,:,1);
+green = currentImage(:,:,2);
+blue = currentImage(:,:,3);
 
-connected_log = bwmorph(edges_log,'clean');
-filled_log = imfill(connected_log,'holes');
-%subplot(1,2,2)
-%imshow(connected_log);
+hue = normalHSV(:,:,1);
+saturation = normalHSV(:,:,2);
+value = normalHSV(:,:,3);
 
-level = graythresh(leaves);
-BW = imbinarize(leaves,0.43);
+luma = normalYCbCr(:,:,1);
+blueRelative = normalYCbCr(:,:,2);
+redRelative = normalYCbCr(:,:,3);
 
-se = strel('disk',1);
-closeBW = imclose(BW,se);
+redMask = (red > 70 & red < 140);
+greenMask = (green > 100);
+blueMask = (blue > 30 & blue < 100);
 
-%figure();
-%imshowpair(BW,closeBW,'montage');
+specialMask = (green > 1.1 * red & green > 1.1 * blue);
+specialMask2 = (green > (red + blue) / 1.4);
+specialMask3 = (red + blue > green);
 
-%{
-figure();
-D = bwdist(~closeBW);
-imshow(D,[]);
-title('Distance Transform of Binary Image');
+hueMask = (hue >= 0.2 & hue <= 0.35);
+saturationMask = (saturation >= 0.3 & saturation <= 0.6);
+valueMask = (value >= 0.2 & value <= 0.7);
 
-figure();
-D = -D;
-imshow(D,[]);
-title('Complement of Distance Transform');
-
-L = watershed(D);
-L(~closeBW) = 0;
-
-figure();
-rgb = label2rgb(L,'jet',[.5 .5 .5]);
-imshow(rgb);
-title('Watershed Transform');
-%}
+lumaMask = (luma >= 100 & luma <= 150);
+blueRelativeMask = (blueRelative >= 60 & blueRelative <= 121);
+redRelativeMask = (redRelative >= 100 & redRelative <= 125);
 
 figure();
-subplot(2,3,1);
-imshow(edges_canny);
-title("Canny");
 
-subplot(2,3,2);
-imshow(edges_prewitt);
-title("Prewitt");
+subplot(4, 3, 1);
+imshow(redMask, []);
+title('Red Mask');
 
-subplot(2,3,3);
-imshow(edges_roberts);
-title("Roberts");
+subplot(4, 3, 2);
+imshow(greenMask, []);
+title('Green Mask');
 
-subplot(2,3,4);
-imshow(edges_sobel);
-title("Sobel");
+subplot(4, 3, 3);
+imshow(blueMask, []);
+title('Blue Mask');
 
-subplot(2,3,5);
-imshow(edges_log);
-title("log");
+subplot(4, 3, 4);
+imshow(specialMask, []);
+title('Special Mask');
+
+subplot(4, 3, 5);
+imshow(specialMask2, []);
+title('Special Mask 2');
+
+subplot(4, 3, 6);
+imshow(specialMask3, []);
+title('Special Mask 3');
+impixelinfo;
+
+subplot(4, 3, 7);
+imshow(hueMask, []);
+title('Hue Mask');
+
+subplot(4, 3, 8);
+imshow(saturationMask, []);
+title('Saturation Mask');
+
+subplot(4, 3, 9);
+imshow(valueMask, []);
+title('Value Mask');
+
+subplot(4, 3, 10);
+imshow(lumaMask, []);
+title('Luma Mask');
+
+subplot(4, 3, 11);
+imshow(blueRelativeMask, []);
+title('Blue Relative Mask');
+
+subplot(4, 3, 12);
+imshow(redRelativeMask, []);
+title('Red Relative Mask');
+
+% Combine the masks to find where all 3 are "true."
+originalMask = uint8(specialMask & specialMask2 & blueRelativeMask & redRelativeMask);
 
 figure();
-se = strel('line',3,45);
-disk = strel('disk',2);
-subplot(1,3,1)
-clean_canny = imclose(edges_roberts,disk);
-imshow(clean_canny);
+subplot(3, 2, 1);
+imshow(originalMask, []);
+title('Original Mask');
 
-subplot(1,3,2)
-bridge_canny = bwmorph(clean_canny,'bridge');
-imshow(bridge_canny);
+maskedrgbImage = uint8(zeros(size(originalMask))); % Initialize
+maskedrgbImage(:,:,1) = currentImage(:,:,1) .* originalMask;
+maskedrgbImage(:,:,2) = currentImage(:,:,2) .* originalMask;
+maskedrgbImage(:,:,3) = currentImage(:,:,3) .* originalMask;
 
-subplot(1,3,3)
-filled_canny = imfill(bridge_canny,'holes');
-imshow(filled_canny);
+subplot(3, 2, 2);
+imshow(maskedrgbImage);
+title('Masked Original Image');
 
+removedMask = bwareaopen(originalMask,400);
+subplot(3, 2, 3);
+imshow(removedMask, []);
+title('Removed Mask');
 
-%{
-filled_canny = imfill(edges_canny,'holes');
-filled_prewitt = imfill(edges_prewitt,'holes');
-filled_roberts = imfill(edges_roberts,'holes');
-filled_sobel = imfill(edges_sobel,'holes');
+removedrgbImage = uint8(zeros(size(removedMask))); % Initialize
+removedrgbImage(:,:,1) = currentImage(:,:,1) .* uint8(removedMask);
+removedrgbImage(:,:,2) = currentImage(:,:,2) .* uint8(removedMask);
+removedrgbImage(:,:,3) = currentImage(:,:,3) .* uint8(removedMask);
+
+subplot(3, 2, 4);
+imshow(removedrgbImage);
+title('Removed Original Image');
+
+se = strel('disk',4);
+closedMask = imclose(removedMask,se);
+subplot(3, 2, 5);
+imshow(closedMask, []);
+title('Closed Mask');
+
+closedrgbImage = uint8(zeros(size(closedMask))); % Initialize
+closedrgbImage(:,:,1) = currentImage(:,:,1) .* uint8(closedMask);
+closedrgbImage(:,:,2) = currentImage(:,:,2) .* uint8(closedMask);
+closedrgbImage(:,:,3) = currentImage(:,:,3) .* uint8(closedMask);
+
+subplot(3, 2, 6);
+imshow(closedrgbImage);
+title('Closed Original Image');
+
+leaves = rgb2gray(closedrgbImage);
+%enhanced = adapthisteq(leaves);
+%enhanced = imsharpen(leaves);
+enhanced = imsharpen(leaves,'Radius',0.5,'Amount',1.5);
+%enhanced = imadjust(leaves);
+%enhanced = histeq(leaves);
 
 figure();
-subplot(2,2,1);
-imshow(filled_canny);
-title("Canny");
+I = enhanced;
 
-subplot(2,2,2);
-imshow(filled_prewitt);
-title("Prewitt");
-
-subplot(2,2,3);
-imshow(filled_roberts);
-title("Roberts");
-
-subplot(2,2,4);
-imshow(filled_sobel);
-title("Sobel");
-%}
-
-%{
-I = rgb2gray(image3);
+subplot(3,2,1);
 imshow(I);
+title('Original Image');
 
 gmag = imgradient(I);
-imshow(gmag,[]);
-title('Gradient Magnitude');
+subplot(3,2,2);
+imshow(gmag,[])
+title('Gradient Magnitude')
 
-se = strel('disk',20);
+se = strel('disk',3);
 Io = imopen(I,se);
-imshow(Io);
-title('Opening');
+subplot(3,2,3);
+imshow(Io)
+title('Opening')
 
 Ie = imerode(I,se);
 Iobr = imreconstruct(Ie,I);
-imshow(Iobr);
-title('Opening-by-Reconstruction');
+subplot(3,2,4);
+imshow(Iobr)
+title('Opening-by-Reconstruction')
 
 Ioc = imclose(Io,se);
-imshow(Ioc);
-title('Opening-Closing');
+subplot(3,2,5);
+imshow(Ioc)
+title('Opening-Closing')
 
 Iobrd = imdilate(Iobr,se);
 Iobrcbr = imreconstruct(imcomplement(Iobrd),imcomplement(Iobr));
 Iobrcbr = imcomplement(Iobrcbr);
-imshow(Iobrcbr);
-title('Opening-Closing by Reconstruction');
+subplot(3,2,6);
+imshow(Iobrcbr)
+title('Opening-Closing by Reconstruction')
+
+figure();
 
 fgm = imregionalmax(Iobrcbr);
-imshow(fgm);
-title('Regional Maxima of Opening-Closing by Reconstruction');
+subplot(4,2,1);
+imshow(fgm)
+title('Regional Maxima of Opening-Closing by Reconstruction')
 
 I2 = labeloverlay(I,fgm);
-imshow(I2);
-title('Regional Maxima Superimposed on Original Image');
+subplot(4,2,2);
+imshow(I2)
+title('Regional Maxima Superimposed on Original Image')
 
-se2 = strel(ones(5,5));
+se2 = strel('disk',3);
+%se2 = strel(ones(5,5));
 fgm2 = imclose(fgm,se2);
+
+%se2 = strel('disk',1);
+se2 = strel(ones(2,2));
 fgm3 = imerode(fgm2,se2);
 
 fgm4 = bwareaopen(fgm3,20);
+
+if(bwconncomp(fgm4).NumObjects > 12)
+    se2 = strel('disk',7);
+    %se2 = strel(ones(5,5));
+    fgm2 = imclose(fgm,se2);
+
+    %se2 = strel('disk',1);
+    se2 = strel(ones(2,2));
+    fgm3 = imerode(fgm2,se2);
+
+    fgm4 = bwareaopen(fgm3,150);
+end
+
 I3 = labeloverlay(I,fgm4);
-imshow(I3);
-title('Modified Regional Maxima Superimposed on Original Image');
+subplot(4,2,3);
+imshow(I3)
+title('Modified Regional Maxima Superimposed on Original Image')
 
 bw = imbinarize(Iobrcbr);
-imshow(bw);
-title('Thresholded Opening-Closing by Reconstruction');
+subplot(4,2,4);
+imshow(bw)
+title('Thresholded Opening-Closing by Reconstruction')
 
 D = bwdist(bw);
 DL = watershed(D);
 bgm = DL == 0;
-imshow(bgm);
-title('Watershed Ridge Lines');
+subplot(4,2,5);
+imshow(bgm)
+title('Watershed Ridge Lines')
 
 gmag2 = imimposemin(gmag, bgm | fgm4);
-
 L = watershed(gmag2);
 
 labels = imdilate(L==0,ones(3,3)) + 2*bgm + 3*fgm4;
 I4 = labeloverlay(I,labels);
-imshow(I4);
-title('Markers and Object Boundaries Superimposed on Original Image');
+subplot(4,2,6);
+imshow(I4)
+title('Markers and Object Boundaries Superimposed on Original Image')
 
 Lrgb = label2rgb(L,'jet','w','shuffle');
-imshow(Lrgb);
-title('Colored Watershed Label Matrix');
+subplot(4,2,7);
+imshow(Lrgb)
+title('Colored Watershed Label Matrix')
 
-figure();
-imshow(I);
+subplot(4,2,8);
+imshow(I)
 hold on
 himage = imshow(Lrgb);
 himage.AlphaData = 0.3;
-title('Colored Labels Superimposed Transparently on Original Image');
-%}
+title('Colored Labels Superimposed Transparently on Original Image')
 
+
+figure();
+
+colourMask = (enhanced ~= 0);
+whiteMask = ~(Lrgb(:,:,1) == 255 & Lrgb(:,:,2) == 255 & Lrgb(:,:,3) == 255);
+finalMask = colourMask & whiteMask;
+finalMask = uint8(bwareaopen(finalMask,200));
+
+bwconncomp(finalMask).NumObjects
+
+finalImage = uint8(zeros(size(finalMask))); % Initialize
+finalImage(:,:,1) = Lrgb(:,:,1) .* finalMask;
+finalImage(:,:,2) = Lrgb(:,:,2) .* finalMask;
+finalImage(:,:,3) = Lrgb(:,:,3) .* finalMask;
+
+imshow(finalImage);
+title('Final Image');
+impixelinfo;
