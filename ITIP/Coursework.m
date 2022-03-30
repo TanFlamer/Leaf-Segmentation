@@ -1,26 +1,29 @@
-image1 = imread("C:\Important\Uni\Coursework\ITIP\Images\plant001.png");
-image2 = imread("C:\Important\Uni\Coursework\ITIP\Images\plant002.png");
-image3 = imread("C:\Important\Uni\Coursework\ITIP\Images\plant003.png");
+function Coursework()
 
-currentImage = image3;
+image = input('Please enter file name: ','s');
+
+%Converting leaf to RGB, HSV and YCbCr
+currentImage = imread(image);
 normalHSV = rgb2hsv(currentImage);
 normalYCbCr = rgb2ycbcr(currentImage);
 
+%Showing the leaf in RGB, HSV and YCbCr
+
+%{
 subplot(1,3,1);
 imshow(currentImage);
 title('Normal RGB');
-impixelinfo;
 
 subplot(1,3,2);
 imshow(normalHSV);
 title('Normal HSV');
-impixelinfo;
 
 subplot(1,3,3);
 imshow(normalYCbCr);
 title('Normal YCbCr');
-impixelinfo;
+%}
 
+%Separating the RGB, HSV and YCbCr components of the leaf
 red = currentImage(:,:,1);
 green = currentImage(:,:,2);
 blue = currentImage(:,:,3);
@@ -33,22 +36,31 @@ luma = normalYCbCr(:,:,1);
 blueRelative = normalYCbCr(:,:,2);
 redRelative = normalYCbCr(:,:,3);
 
+%ROI masking
+
+%RGB masks
 redMask = (red > 70 & red < 140);
 greenMask = (green > 100);
 blueMask = (blue > 30 & blue < 100);
 
+%Special masks
 specialMask = (green > 1.1 * red & green > 1.1 * blue);
 specialMask2 = (green > (red + blue) / 1.4);
 specialMask3 = (red > 1.5 * blue);
 
+%HSV masks
 hueMask = (hue >= 0.2 & hue <= 0.35);
 saturationMask = (saturation >= 0.6);
 valueMask = (value >= 0.2 & value <= 0.7);
 
+%YCbCr masks
 lumaMask = (luma >= 100 & luma <= 150);
 blueRelativeMask = (blueRelative >= 60 & blueRelative <= 121);
 redRelativeMask = (redRelative >= 100 & redRelative <= 125);
 
+%Displaying all the masks
+
+%{
 figure();
 
 subplot(4, 3, 1);
@@ -99,40 +111,59 @@ title('Blue Relative Mask');
 subplot(4, 3, 12);
 imshow(redRelativeMask, []);
 title('Red Relative Mask');
+%}
 
-% Combine the masks to find where all 3 are "true."
+% Combining special mask 1, special mask 2, blue relative mask and red
+% relative mask to produce the original mask
 originalMask = uint8(specialMask & specialMask2 & blueRelativeMask & redRelativeMask);
 
-figure();
-subplot(2, 2, 1);
-imshow(originalMask, []);
-title('Original Mask');
-
+%Removing connected components with less than 400 pixels in the mask
 removedMask = bwareaopen(originalMask,400);
-subplot(2, 2, 2);
-imshow(removedMask, []);
-title('Removed Mask');
 
-se = strel('disk',4);
-closedMask = imclose(removedMask,se);
-subplot(2, 2, 3);
-imshow(closedMask, []);
-title('Closed Mask');
+%Morphologically closing the mask
+closedMask = imclose(removedMask,strel('disk',4));
 
+%Using the mask on original image to produce ROI
 closedrgbImage = uint8(zeros(size(closedMask))); % Initialize
 closedrgbImage(:,:,1) = currentImage(:,:,1) .* uint8(closedMask);
 closedrgbImage(:,:,2) = currentImage(:,:,2) .* uint8(closedMask);
 closedrgbImage(:,:,3) = currentImage(:,:,3) .* uint8(closedMask);
 
+%Displaying the mask in each step
+
+%{
+figure();
+
+subplot(2, 2, 1);
+imshow(originalMask, []);
+title('Original Mask');
+
+subplot(2, 2, 2);
+imshow(removedMask, []);
+title('Removed Mask');
+
+subplot(2, 2, 3);
+imshow(closedMask, []);
+title('Closed Mask');
+
 subplot(2, 2, 4);
 imshow(closedrgbImage);
 title('Closed Original Image');
+%}
 
+%Unsharp masking the ROI
 leaves = rgb2gray(closedrgbImage);
 enhanced = imsharpen(leaves,'Radius',0.5,'Amount',1.5);
 I = enhanced;
 
+%Calculating gradient magnitude
+gmag = imgradient(I);
+
+%Displaying original, sharpened image and gradient magnitude
+
+%{
 figure();
+
 subplot(1,3,1);
 imshow(leaves);
 title('Original Image')
@@ -141,96 +172,122 @@ subplot(1,3,2);
 imshow(I);
 title('Sharpened Image');
 
-gmag = imgradient(I);
 subplot(1,3,3);
 imshow(gmag,[])
 title('Gradient Magnitude')
+%}
 
+
+%Eroding and reconstructing image
+Ie = imerode(I,strel('disk',3));
+Iobr = imreconstruct(Ie,I);
+
+%Dilating and reconstructing image
+Iobrd = imdilate(Iobr,strel('disk',3));
+Iobrcbr = imreconstruct(imcomplement(Iobrd),imcomplement(Iobr));
+Iobrcbr = imcomplement(Iobrcbr);
+
+%Displaying Opening-by-Reconstruction and Opening-Closing by Reconstruction
+
+%{
 figure();
 
-se = strel('disk',3);
-Io = imopen(I,se);
-subplot(2,2,1);
-imshow(Io)
-title('Opening')
-
-Ie = imerode(I,se);
-Iobr = imreconstruct(Ie,I);
-subplot(2,2,2);
+subplot(1,2,1);
 imshow(Iobr)
 title('Opening-by-Reconstruction')
 
-Ioc = imclose(Io,se);
-subplot(2,2,3);
-imshow(Ioc)
-title('Opening-Closing')
-
-Iobrd = imdilate(Iobr,se);
-Iobrcbr = imreconstruct(imcomplement(Iobrd),imcomplement(Iobr));
-Iobrcbr = imcomplement(Iobrcbr);
-subplot(2,2,4);
+subplot(1,2,2);
 imshow(Iobrcbr)
 title('Opening-Closing by Reconstruction')
+%}
 
+%Calculating regional maxima
+fgm = imregionalmax(Iobrcbr);
+
+%Overlay regional maxima on original image
+I2 = labeloverlay(I,fgm);
+
+%Modifying regional maxima for 1st and 2nd image
+fgm2 = imclose(fgm,strel('disk',3));
+fgm3 = imerode(fgm2,strel(ones(2,2)));
+fgm4 = bwareaopen(fgm3,20);
+
+%Modifying regional maxima for 3rd image
+if(bwconncomp(fgm4).NumObjects > 12)
+    fgm2 = imclose(fgm,strel('disk',7));
+    fgm3 = imerode(fgm2,strel(ones(2,2)));
+    fgm4 = bwareaopen(fgm3,150);
+end
+
+%Overlay modified regional maxima on original image
+I3 = labeloverlay(I,fgm4);
+
+%Calculating background by binarizing image
+bw = imbinarize(Iobrcbr);
+
+%Getting watershed ridge lines
+D = bwdist(bw);
+DL = watershed(D);
+bgm = DL == 0;
+
+%Perform watershed on image
+gmag2 = imimposemin(gmag, bgm | fgm4);
+L = watershed(gmag2);
+
+%Superimpose markers and boundaries on original image
+labels = imdilate(L==0,ones(3,3)) + 2*bgm + 3*fgm4;
+I4 = labeloverlay(I,labels);
+
+%Displaying steps in Marker-Based Watershed Segmentation
+
+%{
 figure();
 
-fgm = imregionalmax(Iobrcbr);
 subplot(3,2,1);
 imshow(fgm)
 title('Regional Maxima of Opening-Closing by Reconstruction')
 
-I2 = labeloverlay(I,fgm);
 subplot(3,2,2);
 imshow(I2)
 title('Regional Maxima Superimposed on Original Image')
 
-se2 = strel('disk',3);
-fgm2 = imclose(fgm,se2);
-
-se2 = strel(ones(2,2));
-fgm3 = imerode(fgm2,se2);
-
-fgm4 = bwareaopen(fgm3,20);
-
-if(bwconncomp(fgm4).NumObjects > 12)
-    se2 = strel('disk',7);
-    fgm2 = imclose(fgm,se2);
-
-    se2 = strel(ones(2,2));
-    fgm3 = imerode(fgm2,se2);
-
-    fgm4 = bwareaopen(fgm3,150);
-end
-
-I3 = labeloverlay(I,fgm4);
 subplot(3,2,3);
 imshow(I3)
 title('Modified Regional Maxima Superimposed on Original Image')
 
-bw = imbinarize(Iobrcbr);
 subplot(3,2,4);
 imshow(bw)
 title('Thresholded Opening-Closing by Reconstruction')
 
-D = bwdist(bw);
-DL = watershed(D);
-bgm = DL == 0;
 subplot(3,2,5);
 imshow(bgm)
 title('Watershed Ridge Lines')
 
-gmag2 = imimposemin(gmag, bgm | fgm4);
-L = watershed(gmag2);
-
-labels = imdilate(L==0,ones(3,3)) + 2*bgm + 3*fgm4;
-I4 = labeloverlay(I,labels);
 subplot(3,2,6);
 imshow(I4)
 title('Markers and Object Boundaries Superimposed on Original Image')
+%}
 
+%Display coloured label matrix
+Lrgb = label2rgb(L,'jet','w','shuffle');
+
+%Creating final mask for coursework
+colourMask = (enhanced ~= 0);
+whiteMask = ~(Lrgb(:,:,1) == 255 & Lrgb(:,:,2) == 255 & Lrgb(:,:,3) == 255);
+finalMask = colourMask & whiteMask;
+finalMask = uint8(bwareaopen(finalMask,200));
+
+%Use final mask on coloured label matrix to produce final image
+finalImage = uint8(zeros(size(finalMask)));
+finalImage(:,:,1) = Lrgb(:,:,1) .* finalMask;
+finalImage(:,:,2) = Lrgb(:,:,2) .* finalMask;
+finalImage(:,:,3) = Lrgb(:,:,3) .* finalMask;
+
+%Displaying results of watershed, final mask and results
+
+%{
 figure();
 
-Lrgb = label2rgb(L,'jet','w','shuffle');
 subplot(2,2,1);
 imshow(Lrgb)
 title('Colored Watershed Label Matrix')
@@ -242,23 +299,18 @@ himage = imshow(Lrgb);
 himage.AlphaData = 0.3;
 title('Colored Labels Superimposed Transparently on Original Image')
 
-colourMask = (enhanced ~= 0);
-whiteMask = ~(Lrgb(:,:,1) == 255 & Lrgb(:,:,2) == 255 & Lrgb(:,:,3) == 255);
-finalMask = colourMask & whiteMask;
-finalMask = uint8(bwareaopen(finalMask,200));
-
 subplot(2,2,3);
 imshow(finalMask,[]);
 title('Final Mask');
 
-bwconncomp(finalMask).NumObjects
-
-finalImage = uint8(zeros(size(finalMask))); % Initialize
-finalImage(:,:,1) = Lrgb(:,:,1) .* finalMask;
-finalImage(:,:,2) = Lrgb(:,:,2) .* finalMask;
-finalImage(:,:,3) = Lrgb(:,:,3) .* finalMask;
-
 subplot(2,2,4);
 imshow(finalImage);
 title('Final Image');
-impixelinfo;
+%}
+
+%Displaying final result
+figure('Name','Final Result');
+imshow(finalImage);
+title('Final Image');
+
+end
