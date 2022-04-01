@@ -1,15 +1,24 @@
 function Coursework()
 
+%Introduction to Image Processing Coursework
+%Name: Tan Zhun Xian
+%Student ID: 20313854
+
+%The matlab file only displays one image as output. However, the
+%intermediate steps and their corresponsing images can be seen by removing
+%the brackets on the commented out code.
+
+%Get input image
 image = input('Please enter file name: ','s');
 
-%Converting leaf to RGB, HSV and YCbCr
+%Converting input image to RGB, HSV and YCbCr
 currentImage = imread(image);
 normalHSV = rgb2hsv(currentImage);
 normalYCbCr = rgb2ycbcr(currentImage);
 
-%Showing the leaf in RGB, HSV and YCbCr
-
 %{
+%Showing the input image in RGB, HSV and YCbCr
+
 subplot(1,3,1);
 imshow(currentImage);
 title('Normal RGB');
@@ -23,7 +32,7 @@ imshow(normalYCbCr);
 title('Normal YCbCr');
 %}
 
-%Separating the RGB, HSV and YCbCr components of the leaf
+%Separating the RGB, HSV and YCbCr components of the input image
 red = currentImage(:,:,1);
 green = currentImage(:,:,2);
 blue = currentImage(:,:,3);
@@ -58,9 +67,9 @@ lumaMask = (luma >= 100 & luma <= 150);
 blueRelativeMask = (blueRelative >= 60 & blueRelative <= 121);
 redRelativeMask = (redRelative >= 100 & redRelative <= 125);
 
+%{
 %Displaying all the masks
 
-%{
 figure();
 
 subplot(4, 3, 1);
@@ -129,9 +138,9 @@ closedrgbImage(:,:,1) = currentImage(:,:,1) .* uint8(closedMask);
 closedrgbImage(:,:,2) = currentImage(:,:,2) .* uint8(closedMask);
 closedrgbImage(:,:,3) = currentImage(:,:,3) .* uint8(closedMask);
 
+%{
 %Displaying the mask in each step
 
-%{
 figure();
 
 subplot(2, 2, 1);
@@ -159,9 +168,9 @@ I = enhanced;
 %Calculating gradient magnitude
 gmag = imgradient(I);
 
+%{
 %Displaying original, sharpened image and gradient magnitude
 
-%{
 figure();
 
 subplot(1,3,1);
@@ -187,9 +196,9 @@ Iobrd = imdilate(Iobr,strel('disk',3));
 Iobrcbr = imreconstruct(imcomplement(Iobrd),imcomplement(Iobr));
 Iobrcbr = imcomplement(Iobrcbr);
 
+%{
 %Displaying Opening-by-Reconstruction and Opening-Closing by Reconstruction
 
-%{
 figure();
 
 subplot(1,2,1);
@@ -238,9 +247,9 @@ L = watershed(gmag2);
 labels = imdilate(L==0,ones(3,3)) + 2*bgm + 3*fgm4;
 I4 = labeloverlay(I,labels);
 
-%Displaying steps in Marker-Based Watershed Segmentation
-
 %{
+%Displaying the steps in Marker-Based Watershed Segmentation
+
 figure();
 
 subplot(3,2,1);
@@ -283,9 +292,9 @@ finalImage(:,:,1) = Lrgb(:,:,1) .* finalMask;
 finalImage(:,:,2) = Lrgb(:,:,2) .* finalMask;
 finalImage(:,:,3) = Lrgb(:,:,3) .* finalMask;
 
+%{
 %Displaying results of watershed, final mask and results
 
-%{
 figure();
 
 subplot(2,2,1);
@@ -308,7 +317,7 @@ imshow(finalImage);
 title('Final Image');
 %}
 
-%Displaying final result
+%Displaying final results
 figure('Name','Final Result');
 imshow(finalImage);
 title('Final Image');
