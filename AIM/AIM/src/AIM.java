@@ -44,12 +44,10 @@ public class AIM {
             t4.nextToken();
             hold[2] = t4.nextToken();
 
-            if(hold[2].charAt(0) == '-' || (hold[2].charAt(7) == '-' && Integer.parseInt(hold[2].substring(8)) > 14))
+            if(hold[2].charAt(0) == '-' || hold[2].equals("0.0000e+00") || (hold[2].charAt(7) == '-' && Integer.parseInt(hold[2].substring(8)) > 14))
                 hold[2] = "1.0000e-14";
             else if(hold[2].charAt(7) == '+' && Integer.parseInt(hold[2].substring(8)) > 3)
                 hold[2] = "1.0000e+03";
-            else if(hold[2].equals("0.0000e+00"))
-                hold[2] = "1.0000e+00";
 
             data.computeIfAbsent(hold[0],k -> new LinkedHashMap<>());
             data.get(hold[0]).put(Integer.parseInt(hold[1]),hold[2]);
