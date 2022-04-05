@@ -54,6 +54,7 @@ function Coursework()
         [luma{i},blueRelative{i},redRelative{i}] = imsplit(YCbCrImage{i});
 
         %ROI masking
+        %Referenced and Modified Code from: https://www.mathworks.com/matlabcentral/answers/259093-how-to-define-the-red-green-and-blue-threshold-value
 
         %RGB masks
         redMask{i} = (red{i} > 70 & red{i} < 140);
@@ -92,6 +93,9 @@ function Coursework()
         leaves{i} = rgb2gray(closedrgbImage{i});
         enhanced{i} = imsharpen(leaves{i},'Radius',0.5,'Amount',1.5);
         I{i} = enhanced{i};
+
+        %Marker-Based Watershed Segmentation
+        %Referenced and Modified Code from: https://www.mathworks.com/help/images/marker-controlled-watershed-segmentation.html
 
         %Calculating gradient magnitude
         gmag{i} = imgradient(I{i});
