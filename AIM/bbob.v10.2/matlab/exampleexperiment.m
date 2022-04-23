@@ -3,9 +3,9 @@
 % must be in the path of Matlab/Octave
 % CAPITALIZATION indicates code adaptations to be made
 
-addpath('C:\Users\zxtan\Documents\University Documents\Coursework\AIM\bbob.v10.2\matlab');  % should point to fgeneric.m etc.
-datapath = 'C:\Users\zxtan\Documents\University Documents\Coursework\AIM\bbob.v10.2\Results';  % different folder for each experiment
-opt.algName = 'Particle Swarm Optimization (PSO)';
+addpath('..');  % should point to fgeneric.m etc.
+datapath = '..\results';  % different folder for each experiment
+opt.algName = 'PUT ALGORITHM NAME';
 opt.comments = 'PUT MORE DETAILED INFORMATION, PARAMETER SETTINGS ETC';
 maxfunevals = '5000';     % 10*dim is a short test-experiment taking a few minutes 
                           % INCREMENT maxfunevals successively to larger value(s)
@@ -15,9 +15,9 @@ maxrestarts = 1e4;        % SET to zero for an entirely deterministic algorithm
 more off;  % in octave pagination is on by default
 
 t0 = clock;
-rand('state', sum(100 * t0));
+rand('state', 20313854);
 
-for dim = 5  % small dimensions first, for CPU reasons
+for dim = [2,3,5,10,20]  % small dimensions first, for CPU reasons
   for ifun = benchmarks('FunctionIndices')  % or benchmarksnoisy(...)
     for iinstance = [1:15]  % first 15 function instances
       fgeneric('initialize', ifun, iinstance, datapath, opt); 

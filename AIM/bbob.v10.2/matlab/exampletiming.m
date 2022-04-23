@@ -1,14 +1,14 @@
 % runs the timing experiment for MY_OPTIMIZER. fgeneric.m
 % and benchmarks.m must be in the path of MATLAB/Octave
 
-addpath('C:\Users\zxtan\Documents\University Documents\Coursework\AIM\bbob.v10.2\matlab');  % should point to fgeneric.m etc.
+addpath('..');  % should point to fgeneric.m etc.
 
 more off;  % in octave pagination is on by default
 
 timings = [];
 runs = [];
 dims = [];
-for dim = 5
+for dim = [2,3,5,10,20]
   nbrun = 0;
   ftarget = fgeneric('initialize', 8, 1, 'tmp');
   tic;
