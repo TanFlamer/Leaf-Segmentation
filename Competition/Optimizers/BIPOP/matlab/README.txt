@@ -1,1 +1,0 @@
-To run the codes, make sure that all of the path is correct before running the exampleexperiment.m
